@@ -1,226 +1,182 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Vibe Wheel: Multiplier Edition</title>
+    <title>Vibe Wheel + Audio</title>
     <style>
-        body {
-            margin: 0;
-            background: #000;
-            color: #fff;
-            font-family: monospace;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            overflow: hidden;
-        }
-
-        #wheel-container {
-            position: relative;
-            width: 80vw;
-            height: 80vw;
-            max-width: 300px;
-            transition: opacity 0.5s;
-        }
-
-        canvas {
-            width: 100%;
-            height: 100%;
-            border: 4px solid #fff;
-            border-radius: 50%;
-            transition: transform 5s cubic-bezier(0.15, 0, 0.15, 1);
-        }
-
-        #pointer {
-            position: absolute;
-            top: -15px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 0; height: 0;
-            border-left: 15px solid transparent;
-            border-right: 15px solid transparent;
-            border-top: 25px solid #ff3e00; 
-            z-index: 10;
-        }
-
-        #status-bar {
-            font-size: 1rem;
-            color: #ff3e00;
-            margin-bottom: 10px;
-            font-weight: bold;
-        }
-
-        #result-display {
-            margin-top: 15px;
-            height: 60px;
-            text-align: center;
-            font-size: 1.2rem;
-            font-weight: bold;
-            color: #fff;
-            text-transform: uppercase;
-            padding: 0 10px;
-        }
-
-        #timer-display {
-            font-size: 4rem;
-            color: #ff3e00;
-            display: none;
-            font-weight: 900;
-        }
-
-        button {
-            background: #fff;
-            color: #000;
-            border: none;
-            padding: 15px 30px;
-            font-size: 1rem;
-            font-weight: 900;
-            border-radius: 5px;
-            cursor: pointer;
-            text-transform: uppercase;
-            margin-top: 10px;
-        }
-
+        body { margin: 0; background: #000; color: #fff; font-family: monospace; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; overflow: hidden; }
+        #wheel-container { position: relative; width: 80vw; height: 80vw; max-width: 300px; transition: opacity 0.5s; }
+        canvas { width: 100%; height: 100%; border: 4px solid #fff; border-radius: 50%; transition: transform 5s cubic-bezier(0.15, 0, 0.15, 1); }
+        #pointer { position: absolute; top: -15px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 15px solid transparent; border-right: 15px solid transparent; border-top: 25px solid #ff3e00; z-index: 10; }
+        #status-bar { font-size: 1rem; color: #ff3e00; margin-bottom: 10px; font-weight: bold; }
+        #result-display { margin-top: 15px; height: 60px; text-align: center; font-size: 1.2rem; font-weight: bold; color: #fff; text-transform: uppercase; padding: 0 10px; }
+        #timer-display { font-size: 4rem; color: #ff3e00; display: none; font-weight: 900; }
+        button { background: #fff; color: #000; border: none; padding: 15px 30px; font-size: 1rem; font-weight: 900; border-radius: 5px; cursor: pointer; text-transform: uppercase; margin-top: 10px; }
         .hidden { display: none !important; }
     </style>
 </head>
 <body>
-
     <div id="status-bar">MULTIPLIER: 1X</div>
-    
     <div id="pointer"></div>
-    <div id="wheel-container">
-        <canvas id="wheel"></canvas>
-    </div>
-
+    <div id="wheel-container"><canvas id="wheel"></canvas></div>
     <div id="timer-display">60s</div>
     <div id="result-display">READY</div>
-
     <div id="controls">
         <button id="spin-btn">SPIN</button>
         <button id="timer-btn" class="hidden">START TIMER</button>
     </div>
 
-    <script>
-        const canvas = document.getElementById('wheel');
-        const ctx = canvas.getContext('2d');
-        const spinBtn = document.getElementById('spin-btn');
-        const timerBtn = document.getElementById('timer-btn');
-        const resultDisplay = document.getElementById('result-display');
-        const timerDisplay = document.getElementById('timer-display');
-        const wheelContainer = document.getElementById('wheel-container');
-        const statusDisplay = document.getElementById('status-bar');
+<script>
+    const canvas = document.getElementById('wheel');
+    const ctx = canvas.getContext('2d');
+    const spinBtn = document.getElementById('spin-btn');
+    const timerBtn = document.getElementById('timer-btn');
+    const resultDisplay = document.getElementById('result-display');
+    const timerDisplay = document.getElementById('timer-display');
+    const wheelContainer = document.getElementById('wheel-container');
+    const statusDisplay = document.getElementById('status-bar');
 
-        const actions = [
-            { text: "Remove 1 Clothing", type: "item", val: 1 },
-            { text: "Remove 1 Clothing", type: "item", val: 1 },
-            { text: "Remove 1 Clothing", type: "item", val: 1 },
-            { text: "Remove 1 of HIS", type: "item", val: 1 },
-            { text: "Kiss", type: "time", val: 60 },
-            { text: "Nipple Play", type: "time", val: 60 },
-            { text: "Suck", type: "time", val: 60 },
-            { text: "Rim", type: "time", val: 60 },
-            { text: "Finger", type: "time", val: 60 },
-            { text: "DOUBLE UP", type: "special", val: 0 }
-        ];
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    
+    function playTick() {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.1);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+    }
 
-        let currentRotation = 0;
-        let multiplier = 1;
-        let timerInterval;
-        let currentTargetSeconds = 60;
-
-        function drawWheel() {
-            canvas.width = 800; canvas.height = 800;
-            const slice = (Math.PI * 2) / actions.length;
-            actions.forEach((act, i) => {
-                const angle = i * slice;
-                ctx.beginPath();
-                ctx.fillStyle = (i % 2 === 0) ? '#111' : '#222';
-                if(act.type === 'special') ctx.fillStyle = '#330000';
-                ctx.moveTo(400, 400);
-                ctx.arc(400, 400, 400, angle, angle + slice);
-                ctx.fill();
-                ctx.strokeStyle = "#444"; ctx.lineWidth = 2; ctx.stroke();
-                ctx.save();
-                ctx.translate(400, 400);
-                ctx.rotate(angle + slice / 2);
-                ctx.textAlign = "right"; ctx.fillStyle = "#fff";
-                ctx.font = "bold 26px monospace";
-                ctx.fillText(act.text, 380, 10);
-                ctx.restore();
-            });
+    function playAlarm() {
+        const now = audioCtx.currentTime;
+        for(let i=0; i<3; i++) {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.frequency.setValueAtTime(880, now + (i*0.3));
+            gain.gain.setValueAtTime(0.2, now + (i*0.3));
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + (i*0.3) + 0.2);
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(now + (i*0.3)); osc.stop(now + (i*0.3) + 0.2);
         }
+    }
 
-        spinBtn.addEventListener('click', () => {
-            const spinAdd = Math.floor(Math.random() * 360) + 3600; 
-            currentRotation += spinAdd;
-            canvas.style.transform = `rotate(${currentRotation}deg)`;
-            resultDisplay.innerText = "SPINNING...";
-            spinBtn.classList.add('hidden');
+    const actions = [
+        { text: "Remove 1 Clothing", type: "item", val: 1 },
+        { text: "Remove 1 Clothing", type: "item", val: 1 },
+        { text: "Remove 1 Clothing", type: "item", val: 1 },
+        { text: "Remove 1 of HIS", type: "item", val: 1 },
+        { text: "Kiss", type: "time", val: 60 },
+        { text: "Nipple Play", type: "time", val: 60 },
+        { text: "Suck", type: "time", val: 60 },
+        { text: "Rim", type: "time", val: 60 },
+        { text: "Finger", type: "time", val: 60 },
+        { text: "DOUBLE UP", type: "special", val: 0 }
+    ];
 
-            setTimeout(() => {
-                const actualDegree = currentRotation % 360;
-                const index = Math.floor((360 - (actualDegree % 360)) / (360 / actions.length)) % actions.length;
-                const result = actions[index];
+    let currentRotation = 0;
+    let multiplier = 1;
+    let timerInterval;
+    let currentTargetSeconds = 60;
 
-                if (result.type === "special") {
-                    multiplier *= 2;
-                    statusDisplay.innerText = `MULTIPLIER: ${multiplier}X`;
-                    resultDisplay.innerText = "DOUBLE UP! SPIN AGAIN!";
+    function drawWheel() {
+        canvas.width = 800; canvas.height = 800;
+        const slice = (Math.PI * 2) / actions.length;
+        actions.forEach((act, i) => {
+            const angle = i * slice;
+            ctx.beginPath();
+            ctx.fillStyle = (i % 2 === 0) ? '#111' : '#222';
+            if(act.type === 'special') ctx.fillStyle = '#330000';
+            ctx.moveTo(400, 400); ctx.arc(400, 400, 400, angle, angle + slice); ctx.fill();
+            ctx.strokeStyle = "#444"; ctx.lineWidth = 2; ctx.stroke();
+            ctx.save();
+            ctx.translate(400, 400); ctx.rotate(angle + slice / 2);
+            ctx.textAlign = "right"; ctx.fillStyle = "#fff";
+            ctx.font = "bold 26px monospace";
+            ctx.fillText(act.text, 380, 10); ctx.restore();
+        });
+    }
+
+    spinBtn.addEventListener('click', () => {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const spinAdd = Math.floor(Math.random() * 360) + 3600; 
+        currentRotation += spinAdd;
+        canvas.style.transform = `rotate(${currentRotation}deg)`;
+        resultDisplay.innerText = "SPINNING...";
+        spinBtn.classList.add('hidden');
+
+        // Sound simulation for ticking
+        let ticks = 0;
+        const tickInterval = setInterval(() => {
+            playTick();
+            ticks++;
+            if(ticks > 25) clearInterval(tickInterval);
+        }, 150);
+
+        setTimeout(() => {
+            const actualDegree = currentRotation % 360;
+            const index = Math.floor((360 - (actualDegree % 360)) / (360 / actions.length)) % actions.length;
+            const result = actions[index];
+
+            if (result.type === "special") {
+                multiplier *= 2;
+                statusDisplay.innerText = `MULTIPLIER: ${multiplier}X`;
+                resultDisplay.innerText = "DOUBLE UP! SPIN AGAIN!";
+                spinBtn.classList.remove('hidden');
+            } else {
+                if (result.type === "item") {
+                    const count = result.val * multiplier;
+                    resultDisplay.innerText = `${result.text.replace('1', count)}`;
                     spinBtn.classList.remove('hidden');
-                } else {
-                    if (result.type === "item") {
-                        const count = result.val * multiplier;
-                        resultDisplay.innerText = `${result.text.replace('1', count)}`;
-                        spinBtn.classList.remove('hidden');
-                        multiplier = 1; // Reset after action
-                    } else if (result.type === "time") {
-                        currentTargetSeconds = result.val * multiplier;
-                        resultDisplay.innerText = `${result.text} for ${currentTargetSeconds/60}m`;
-                        timerBtn.innerText = `START ${currentTargetSeconds}s TIMER`;
-                        timerBtn.classList.remove('hidden');
-                    }
+                    multiplier = 1;
+                } else if (result.type === "time") {
+                    currentTargetSeconds = result.val * multiplier;
+                    resultDisplay.innerText = `${result.text} for ${currentTargetSeconds/60}m`;
+                    timerBtn.innerText = `START ${currentTargetSeconds}s TIMER`;
+                    timerBtn.classList.remove('hidden');
                 }
-            }, 5000);
-        });
+            }
+        }, 5000);
+    });
 
-        timerBtn.addEventListener('click', () => {
-            timerBtn.classList.add('hidden');
-            wheelContainer.style.opacity = "0.2";
-            timerDisplay.style.display = "block";
-            startCountdown(currentTargetSeconds);
-        });
+    timerBtn.addEventListener('click', () => {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        timerBtn.classList.add('hidden');
+        wheelContainer.style.opacity = "0.2";
+        timerDisplay.style.display = "block";
+        startCountdown(currentTargetSeconds);
+    });
 
-        function startCountdown(seconds) {
-            let timeLeft = seconds;
+    function startCountdown(seconds) {
+        let timeLeft = seconds;
+        timerDisplay.innerText = timeLeft + "s";
+        timerInterval = setInterval(() => {
+            timeLeft--;
             timerDisplay.innerText = timeLeft + "s";
-            timerInterval = setInterval(() => {
-                timeLeft--;
-                timerDisplay.innerText = timeLeft + "s";
-                if (timeLeft <= 0) {
-                    clearInterval(timerInterval);
-                    timerDisplay.innerText = "DONE!";
-                    setTimeout(() => {
-                        multiplier = 1;
-                        statusDisplay.innerText = `MULTIPLIER: 1X`;
-                        resetUI();
-                    }, 2000);
-                }
-            }, 1000);
-        }
+            if (timeLeft <= 0) {
+                clearInterval(timerInterval);
+                playAlarm();
+                timerDisplay.innerText = "DONE!";
+                setTimeout(() => {
+                    multiplier = 1;
+                    statusDisplay.innerText = `MULTIPLIER: 1X`;
+                    resetUI();
+                }, 3000);
+            }
+        }, 1000);
+    }
 
-        function resetUI() {
-            timerDisplay.style.display = "none";
-            wheelContainer.style.opacity = "1";
-            spinBtn.classList.remove('hidden');
-            resultDisplay.innerText = "READY";
-        }
+    function resetUI() {
+        timerDisplay.style.display = "none";
+        wheelContainer.style.opacity = "1";
+        spinBtn.classList.remove('hidden');
+        resultDisplay.innerText = "READY";
+    }
 
-        drawWheel();
-    </script>
+    drawWheel();
+</script>
 </body>
 </html>
